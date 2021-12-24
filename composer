@@ -1,0 +1,76 @@
+#/bin/bash
+
+DIR=$1
+ACTION=$2
+PWD=$(pwd)
+OPT=""
+
+bold=$(tput bold)
+normal=$(tput sgr0)
+italic=$(tput sitm)
+
+print_help() {
+    echo "Docker-compose wrapper to bring up or down all applications within subdirectories."
+    echo ""
+    echo "Usage:"
+    echo "./composer <all|name_of_directory> <up|down>"
+    echo ""
+}
+
+composer() {
+    echo ""
+    echo "> ${bold}Bringing $3 ${italic}$2${normal}..."
+    echo "> # docker-compose --project-directory $1/$2 $3 $OPT --remove-orphans"
+    echo ""
+    docker-compose --project-directory $1/$2 $3 $OPT --remove-orphans
+}
+
+user_input() {
+    echo "Bulk docker-compose action ${bold}$ACTION${normal} requested for all directories."
+    read -p "${italic}Press (y) to continue...${normal}" -n 1 -r
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Error: received \"$REPLY\", actions cancelled." && exit 1 || return 1
+    fi
+}
+
+action() {
+    if [ $DIR == "all" ]; then
+        # Performing action on all directories
+
+        user_input
+
+        for D in */; do
+            APP=$(echo $D | sed 's:/*$::')
+            composer $PWD $APP $ACTION
+        done
+
+    elif [ -d "./$DIR" ]; then
+        # Performing action on a specific directory
+
+        D=$DIR
+        APP=$(echo $D | sed 's:/*$::')
+        composer $PWD $APP $ACTION
+
+    else
+        # Matches no directory, erroring out.
+        print_help
+        echo "Error: Specified directory \"$DIR\" cannot be found."
+        exit 2
+    fi
+}
+
+main() {
+    if [[ $ACTION == "up" ]]; then
+        OPT="-d"
+        action
+    elif [[ $ACTION == "down" ]]; then
+        action
+    else
+        print_help
+        echo "Error: Unrecognised action. Supported actions: \"up\", \"down\"."
+        exit 1
+    fi
+}
+
+main 
