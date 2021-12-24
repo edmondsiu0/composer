@@ -17,6 +17,10 @@ Wrapper script to perform bulk docker-compose up/down actions
 ```
 
 ## Usage
+
+> ./composer <all|name_of_directory> <up|down>
+
+## Examples
 ### Brining up all applications in directory
 ```bash
 ./composer all up
